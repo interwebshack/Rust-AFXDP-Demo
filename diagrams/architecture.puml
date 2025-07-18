@@ -1,0 +1,28 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam node {
+    BackgroundColor<<AWS>> #FF9900
+    BackgroundColor<<eBPF>> #88CCEE
+    BackgroundColor<<Rust>> #FFCC00
+    BorderColor Black
+    FontColor Black
+}
+
+actor "Traffic Generator" as TG #FFDDDD
+
+node "AWS EC2 Instance" <<AWS>> {
+    node "eth0 NIC" #FFFFFF {
+        component "AF_XDP Socket" #99FF99
+    }
+    node "eBPF XDP Program" <<eBPF>> {
+        [Packet Filter]
+    }
+    node "Rust User-Space App" <<Rust>> {
+        [Processing Logic]
+    }
+}
+
+TG --> "eth0 NIC"
+"eth0 NIC" --> "eBPF XDP Program"
+"eBPF XDP Program" --> "Rust User-Space App"
+@enduml
