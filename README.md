@@ -25,36 +25,56 @@ It uses the Rust [Aya](https://github.com/aya-rs/aya) library for writing **safe
 ```shell
 rust-afxdp-demo/
 ├── ansible/
-│   ├── inventory/hosts.ini
+│   ├── inventory/
+│   │   └── hosts.ini
 │   ├── playbooks/
 │   │   ├── 01-create-vpc.yml
 │   │   ├── 02-launch-ec2.yml
 │   │   ├── 03-setup-instance.yml
 │   │   └── 04-install-ebpf-tools.yml
-├── aya-ebpf/
+│   └── README.md                        # Overview for Ansible roles/playbooks
+│
+├── aya-ebpf/                            # Rust Aya XDP program
 │   ├── Cargo.toml
 │   └── src/
 │       ├── main.rs
 │       ├── xdp_filter.rs
 │       └── common.rs
+│
+├── udp-bench/                # Custom UDP benchmarking tool
+│   ├── Cargo.toml
+│   └── src/
+│       ├── main.rs           # CLI entry point
+│       ├── sender.rs         # Windows → EC2 packet generator
+│       ├── receiver.rs       # EC2-side packet receiver (for stats)
+│       └── stats.rs          # Stats utilities
+│
 ├── container/
 │   ├── Dockerfile
 │   └── entrypoint.sh
+│
 ├── diagrams/
 │   ├── architecture.puml        # PlantUML file
-│   └── architecture.png         # Rendered diagram (optional)
+│   └── architecture.png         # Rendered diagram
+│
 ├── scripts/
 │   ├── build.sh
 │   ├── run-test.sh
 │   └── cleanup.sh
+│
 ├── docs/
 │   ├── AWS_SETUP.md
 │   ├── EBPF_AYA_AF_XDP.md
 │   ├── CONTAINER_SETUP.md
-│   └── TESTING_GUIDE.md
-└── .github/
-    └── workflows/ci.yml
-
+│   ├── TESTING_GUIDE.md
+│   └── UDP_BENCHMARK.md           # Guide for using custom UDP tool
+│
+├── .github/
+│   └── workflows/
+│       └── ci.ymll
+│
+├── LICENSE
+└── README.md
 ```
 
 ---
