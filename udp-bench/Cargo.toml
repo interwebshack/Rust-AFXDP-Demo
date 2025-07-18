@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 clap = { version = "4", features = ["derive"] }
+rand = "0.8"
+anyhow = "1.0"

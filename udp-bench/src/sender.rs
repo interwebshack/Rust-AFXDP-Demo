@@ -33,19 +33,21 @@ pub async fn run(
 
     let tasks: Vec<_> = (0..concurrency)
         .map(|_| {
-            let socket = socket.clone();
-            let barrier = barrier.clone();
+            let socket = Arc::clone(&socket);
+            let barrier = Arc::clone(&barrier);
+
+            // Pre-generate packet to avoid using non-Send RNG inside async
+            let packet = if random_payload {
+                let mut rng = rand::thread_rng();
+                let mut data = vec![0u8; size];
+                rng.fill(&mut data[..]);
+                data
+            } else {
+                vec![0u8; size]
+            };
 
             tokio::spawn(async move {
                 barrier.wait().await;
-
-                // Prepare packet (random or zeroed)
-                let mut rng = rand::thread_rng();
-                let mut packet = vec![0u8; size];
-                if random_payload {
-                    rng.fill(&mut packet[..]);
-                }
-
                 let interval = Duration::from_secs_f64(1.0 / packets_per_task as f64);
                 let mut sent_packets: u64 = 0;
 
@@ -55,11 +57,12 @@ pub async fn run(
                         eprintln!("Send error: {}", e);
                     }
                     sent_packets += 1;
-                    if before.elapsed() < interval {
-                        sleep(interval - before.elapsed()).await;
+
+                    let delay = interval.saturating_sub(before.elapsed());
+                    if delay > Duration::ZERO {
+                        sleep(delay).await;
                     }
                 }
-
                 sent_packets
             })
         })

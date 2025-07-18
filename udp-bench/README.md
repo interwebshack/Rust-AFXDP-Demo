@@ -2,24 +2,30 @@
 
 A high-performance **Rust-based UDP benchmarking tool** for testing network throughput between two endpoints.  
 This tool is a lightweight alternative to `iperf3` and is designed to run in **send** or **receive** mode from a single binary.
+Optimized for **AF_XDP demonstrations**, this tool simulates real-world traffic patterns while providing **buffered packet processing** and **lock-free stats reporting**.
 
 ---
 
 ## **Features**
 ✅ Single binary for both **Send** and **Receive** modes  
+✅ Lock-free **atomic counters** for real-time stats  
+✅ **Tokio MPSC buffer** between capture and processing to reduce packet drops  
+✅ Configurable concurrency, packet size, rate, and buffer size  
+✅ Random payload support for realistic traffic  
+✅ Designed for AF_XDP-like **zero-copy pipeline integration**
 ✅ CLI-driven configuration (target IP, rate, packet size, concurrency)  
 ✅ **Cross-platform** (Windows for sender, Linux for receiver)  
 ✅ Supports **random payloads** for realistic traffic simulation  
 ✅ Real-time stats in receive mode  
-✅ Highly concurrent, leveraging `tokio` async runtim 
+✅ Highly concurrent, leveraging `tokio` async runtime 
 
 ---
 
 ## **Build**
 Ensure you have **Rust 1.74+** installed:
+
 ```shell
-cd udp-bench/
-cargo build --release
+cargo build --release --manifest-path udp-bench/Cargo.toml
 
 ```
 The binary will be at:
@@ -32,9 +38,9 @@ target/release/udp-bench
 
 ## **Usage**
 
-### **Send Mode (Windows → EC2 or Linux → Linux):**
+### **Send Mode:**
 ```shell
-./target/release/udp-bench send \
+udp-bench send \
   --target <receiver-ip> \
   --port 5201 \
   --size 1400 \
@@ -44,24 +50,45 @@ target/release/udp-bench
   --random-payload
 
 ```
-### **Receive Mode (EC2 or Linux machine):**
+### **Receive Mode:**
 ```bash
-./target/release/udp-bench receive --port 5201
+udp-bench receive --port 5201 --buffer-size 8192
 
 ```
 
 ---
 
 ### CLI Options
-| Option             | Description                                  | Default |
-| ------------------ | -------------------------------------------- | ------- |
-| `--target`         | Receiver IP (required in `send` mode)        | None    |
-| `--port`           | UDP port                                     | 5201    |
-| `--size`           | Packet size in bytes                         | 1400    |
-| `--rate`           | Packets per second                           | 10000   |
-| `--duration`       | Duration in seconds                          | 30      |
-| `--concurrency`    | Number of concurrent sending tasks           | 4       |
-| `--random-payload` | Use random payload instead of zeroed packets | false   |
+| Option             | Description                          | Default |
+| ------------------ | ------------------------------------ | ------- |
+| `--target`         | Receiver IP (send mode)              | None    |
+| `--port`           | UDP port                             | 5201    |
+| `--size`           | Packet size in bytes                 | 1400    |
+| `--rate`           | Packets per second                   | 10000   |
+| `--duration`       | Duration in seconds                  | 30      |
+| `--concurrency`    | Number of parallel sending tasks     | 4       |
+| `--random-payload` | Enable random payload                | false   |
+| `--buffer-size`    | Channel buffer size for receive mode | 4096    |
+
+---
+
+### **Design Principles**
+- **Lock-free Stats Collection:**
+  Stats counters (packets, bytes) are updated using atomics to avoid blocking the packet reception loop.  
+
+- **Separate Stats Reporter Task:**
+  Reporting runs on a separate task that periodically aggregates and displays stats from atomic counters.
+
+- **Buffering for Burst Handling:**
+  Tokio MPSC provides backpressure and buffering to minimize drops during short bursts or under heavy load.
+
+- **AF_XDP Alignment:**
+  This architecture mimics AF_XDP’s principles: fast, lock-free, and decoupled processing.
+
+---
+
+### **AF_XDP Architecture**
+![Architecture](./diagrams/udp-bench-architecture.png)  
 
 ---
 
@@ -82,11 +109,11 @@ udp-bench send \
 **Receiver Example**
 Listen on port `5201` and print stats every second:
 ```shell
-udp-bench receive --port 5201
+udp-bench receive --port 5201 --buffer-size 8192
 
 ```
 ---
-### Output
+### Sample Output
 **Sender:**
 ```shell
 Starting UDP send to 3.92.123.45:5201 | size=1400 bytes | rate=50000 pps | duration=60 sec | concurrency=4 | random_payload=true
@@ -98,9 +125,8 @@ Throughput: 560.00 Mbps
 ```
 **Receiver:**
 ```shell
-Listening for UDP packets on 0.0.0.0:5201
-Elapsed: 10s | Packets: 500,000 | Avg PPS: 50,000
-Elapsed: 20s | Packets: 1,000,000 | Avg PPS: 50,000
+Listening for UDP packets on 0.0.0.0:5201 with buffer size 8192
+[Stats] Elapsed: 10s | Packets: 500,000 | Bytes: 700 MB | Throughput: 560.00 Mbps
 
 ```
 ---
@@ -155,6 +181,7 @@ If you are testing **AF_XDP performance** on EC2:
 
 ### **Troubleshooting**
 * **Packets dropping?**
+  * Increase `--buffer-size`.
   * Increase receiver socket buffer size.
   * Lower `--rate` or increase `--concurrency`.
 * **Sender can't reach target?**

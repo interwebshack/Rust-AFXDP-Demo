@@ -1,0 +1,23 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam node {
+    BackgroundColor<<AF_XDP>> #88CCEE
+    BackgroundColor<<Rust>> #FFCC00
+}
+
+actor "Traffic Generator" as TG
+
+node "Linux Host" {
+    [eth0 NIC] <<AF_XDP>>
+    [UDP Receiver Task] <<Rust>>
+    [Tokio MPSC Buffer]
+    [Worker(s)]
+    [Stats Reporter Task] <<Rust>>
+}
+
+TG --> [eth0 NIC]
+[eth0 NIC] --> [UDP Receiver Task]
+[UDP Receiver Task] --> [Tokio MPSC Buffer]
+[Tokio MPSC Buffer] --> [Worker(s)]
+[UDP Receiver Task] --> [Stats Reporter Task] : Atomic counters
+@enduml

@@ -2,7 +2,6 @@ use clap::{Parser, Subcommand};
 
 mod sender;
 mod receiver;
-mod stats;
 
 #[derive(Parser)]
 #[command(name = "udp-bench", about = "Rust-based UDP benchmarking tool")]
@@ -34,6 +33,8 @@ enum Commands {
     Receive {
         #[arg(long)]
         port: u16,
+        #[arg(long, default_value = "4096")]
+        buffer_size: usize,
     },
 }
 
@@ -52,8 +53,8 @@ async fn main() -> anyhow::Result<()> {
         } => {
             sender::run(target, port, size, rate, duration, concurrency, random_payload).await?;
         }
-        Commands::Receive { port } => {
-            receiver::run(port).await?;
+        Commands::Receive { port, buffer_size } => {
+            receiver::run(port, buffer_size).await?;
         }
     }
     Ok(())

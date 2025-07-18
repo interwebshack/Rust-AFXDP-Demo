@@ -1,5 +1,6 @@
 [workspace]
+resolver = "3"
 members = [
-    "aya-ebpf",
-    "udp-bench"
+    "udp-bench",
+    "aya-ebpf"
 ]
