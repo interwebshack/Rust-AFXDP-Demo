@@ -9,18 +9,18 @@ Rust AF_XDP demo using Aya for high-performance packet processing. Includes AWS 
 
 ---
 
-## Overview
+### Overview
 `rust-afxdp-demo` provides a **complete solution** for:
 - High-performance packet processing using **Rust + eBPF**
 - **AF_XDP zero-copy networking**
 - **AWS EC2 automation with Ansible**
 - **Container-based deployment**
 
-It uses the [Aya](https://github.com/aya-rs/aya) library for writing **safe Rust eBPF programs**, avoiding unsafe C code.
+It uses the Rust [Aya](https://github.com/aya-rs/aya) library for writing **safe Rust eBPF programs**, avoiding unsafe C code.
 
 ---
 
-## Repository Structure
+### Repository Structure
 
 ```shell
 rust-afxdp-demo/
@@ -57,9 +57,33 @@ rust-afxdp-demo/
 
 ```
 
+---
+
+### Architecture Diagram  
+
+![Architecture](diagrams/architecture.png)  
 
 ---
 
-## Architecture Diagram  
+### Prerequisites
+* AWS CLI and credentials configured  
+* Ansible installed locally  
+* Rust 1.74+, cargo xtask, bpf-linker  
+* Linux kernel headers on EC2 instance  
+* Podman (optional for container tests)  
 
-![Architecture](diagrams/architecture.png)  
+---
+
+### Deployment Steps  
+**Step 1: Provision AWS Infrastructure**  
+* Creates **VPC, subnets, Internet Gateway, security groups**  
+* Deploys an **ENA-enabled EC2 instance** (e.g., `c5n.large`)
+* Sets up **SSH access and Ansible inventory**  
+
+Run: 
+```shell
+cd ansible
+ansible-playbook playbooks/01-create-vpc.yml
+ansible-playbook playbooks/02-launch-ec2.yml
+
+```
